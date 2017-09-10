@@ -1,0 +1,173 @@
+---
+title: 'Data 608: Week 1 Assignment'
+subtitle: 'Principles of Data Visualization \n and Introduction to ggplot2'
+author: "Aaron Grzasko"
+date: "August 27, 2017"
+output: 
+    html_document:
+        theme: cosmo
+        highlight: haddock
+        
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, message=FALSE, warning=FALSE)
+```
+
+<style>
+.question {color:gray;}
+</style>
+
+## Overview
+<p class="question">I have provided you with data about the 5,000 fastest growing companies in the US, as compiled by Inc. magazine.</p>  
+  
+<p class="question">Please use the data available at https://github.com/charleyferrari/CUNY_DATA608/tree/master/lecture1/Data.</p>
+
+<ul class = "question">
+<li>This assignment must be done in a single R script with ggplot2. Use of dplyr or plyr is encouraged but not required.</li>
+<li>Images for question 'x' must be saved to the lecture1 directory as 'FigureX.jpg' or 'FigureX.png' (i.e. for Question 1, Figure1.jpg, etc).</li>
+</ul>
+
+
+```{r load_lib}
+# load libraries
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# github url to csv file
+my_url <- "https://raw.githubusercontent.com/spitakiss/Data608_Work/master/Week1/inc5000_data.csv"
+
+# read in data to data frame
+mydata <- read.csv(my_url, stringsAsFactors = F)
+
+# overview of mydata data frame
+str(mydata)
+
+```
+
+## Problem 1
+<p class="question">Create a graph that shows the distribution of companies in the dataset by state (i.e. how many are in each state). There are a lot of states, so consider which axis you should use assuming I am using a 'portrait' oriented screen (i.e. taller than wide).</p> 
+
+```{r, fig.height=7, fig.width=7}
+# summarize raw data
+state_summary <- mydata %>%
+  group_by(State) %>%
+  tally() %>%
+  rename(count = n) %>%
+  arrange(desc(count))
+
+# plot data
+g <- ggplot(state_summary, aes(x = reorder(State, count), y = count)) 
+g <- g + geom_bar(stat = "identity", fill = 'darkblue') + coord_flip() 
+g <- g + ggtitle("Distribution of 5,000 Fastest Growing Companies")
+g <- g + labs(subtitle = "by state", x = "state", y = "company count")
+g <- g + theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+g
+
+# save to file
+ggsave("Figure1.png", height = 9, width = 7)
+```
+  
+## Problem 2
+<p class = "question">Let's dig in on the State with the 3rd most companies in the data set. Imagine you work for the state and are interested in how many people are employed by companies in different industries employ. Create a plot of average employment by industry for companies in this state (only use cases with full data (user R's complete.cases() function). Your graph should show how variable the ranges are, and exclude outliers.</p>  
+```{r}
+# find state with third most companies (3rd row b/c already ordered desc)
+third_state <- state_summary[3,"State"]
+third_state
+
+# filter original data: complete cases and 3rd ranked state only   
+third_data <- mydata[complete.cases(mydata),] %>%
+  inner_join(third_state, by = "State")
+
+# find mean employees by industry
+means <- aggregate(Employees ~ Industry, third_data, mean)
+
+# find maximum average employee no.
+means_max <- max(means$Employees)
+
+# prepare plot data: box plots (with outliers removed) to show variation; dots for mean EEs
+g <- ggplot(third_data, aes(x = reorder(Industry,Employees,mean), y = Employees))
+g <- g + geom_boxplot(outlier.shape = NA, show.legend=F) + coord_flip()
+g <- g + labs(x = "industry", y = "employees", title="Mean Employee Size by Industry")
+g <- g + labs(subtitle = "with boxplots")
+g <- g + geom_point(data = means, aes(x=Industry, y=Employees), color='darkblue', size = 2)
+g <- g + theme(plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5))
+```
+Let's look at the plot in its current form:  
+  
+```{r}
+# plot data, linear scale
+g <- g +  scale_y_continuous(limits = c(0,means_max), breaks = seq(0, means_max, 200))
+g
+# save to file
+ggsave("Figure2a.png", height = 9, width = 7)
+```
+  
+The plot above indicates that the mean data are highly skewed: the average employee count in the *Business Products & Services* industry are roughly 140% times greater than the second ranked industry, *Consumer Products & Services*.    
+
+Given this significant skew, it may be helpful to visualize the employee count data on a logarithmic scale:  
+```{r}
+# plot data, log scale
+g <- g + scale_y_log10(limits = c(1, means_max))
+g <- g + labs(caption = "(grid line spacing on log scale)")
+g <- g + theme(plot.caption = element_text(size = 8))
+g
+
+# save to file
+ggsave("Figure2b.png", height = 9, width = 7)
+```
+
+## Problem 3  
+  
+<p class="question">Now imagine you work for an investor and want to see which industries generate the most revenue per employee. Create a chart makes this information clear.</p>  
+  
+
+```{r}
+# revenue per employee by industry
+revenue <- mydata[complete.cases(mydata),] %>%
+  group_by(Industry) %>%
+  summarise(org_count = n(),Revenue = sum(Revenue),Employees= sum(Employees)) %>%
+  mutate(rev_ee = Revenue / Employees )
+
+# maximum rev/ee
+max_rev_ee = max(revenue$rev_ee)
+```
+
+First, lets plot the data using color shading to indicate the total number of employees in a given industry.
+```{r}
+# plot with color fill by employee count
+g <- ggplot(revenue, aes(x=reorder(Industry, rev_ee), y=rev_ee, fill=Employees))
+g <-  g + geom_bar(stat="identity") + coord_flip()
+g <- g + labs(title = "Revenue per Employee by Industry", x = "industry", y = "revenue per employee") 
+g <- g + scale_fill_gradientn(colours = blues9[-(1:2)])
+g <- g + theme(plot.title = element_text(hjust = 0.5))
+g <- g + scale_y_continuous( breaks=seq(0,max_rev_ee,200000))
+g
+
+# save to file
+ggsave("Figure3a.png", height = 9, width = 7)
+```
+  
+Now let's plot using shading to indicate the count of unique organizations in a given industry:  
+
+```{r}
+# plot with color fill by org count
+g <- ggplot(revenue, aes(x=reorder(Industry, rev_ee), y=rev_ee, fill=org_count))
+g <- g + geom_bar(stat="identity") + coord_flip()
+g <- g + labs(title = "Revenue per Employee by Industry", x = "industry", y = "revenue per employee") 
+g <- g + scale_fill_gradientn(colours = blues9[-(1:2)])
+g <- g + theme(plot.title = element_text(hjust = 0.5),plot.subtitle = element_text(hjust = 0.5))
+g <- g + scale_y_continuous( breaks=seq(0,max_rev_ee,200000))
+g
+
+# save to file
+ggsave("Figure3b.png", height = 9, width = 7)
+```
+  
+## References  
+  
+* How to remove outliers in boxplots: https://stackoverflow.com/questions/5677885/ignore-outliers-in-ggplot2-boxplot
+*  Plotting means in a boxplot: https://stackoverflow.com/questions/23942959/ggplot2-show-separate-mean-values-in-box-plot-for-grouped-data
+* Reordering plot by mean values of grouped data: https://stackoverflow.com/questions/39153646/how-to-reorder-x-axis-in-geom-boxplot-by-mean-of-the-group-in-r
+
