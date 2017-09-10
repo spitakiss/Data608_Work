@@ -71,6 +71,7 @@ ggsave("Figure1.png", height = 9, width = 7)
   
 ## Problem 2
 <p class = "question">Let's dig in on the State with the 3rd most companies in the data set. Imagine you work for the state and are interested in how many people are employed by companies in different industries employ. Create a plot of average employment by industry for companies in this state (only use cases with full data (user R's complete.cases() function). Your graph should show how variable the ranges are, and exclude outliers.</p>  
+  
 ```{r}
 # find state with third most companies (3rd row b/c already ordered desc)
 third_state <- state_summary[3,"State"]
@@ -107,6 +108,7 @@ ggsave("Figure2a.png", height = 9, width = 7)
 The plot above indicates that the mean data are highly skewed: the average employee count in the *Business Products & Services* industry are roughly 140% times greater than the second ranked industry, *Consumer Products & Services*.    
 
 Given this significant skew, it may be helpful to visualize the employee count data on a logarithmic scale:  
+  
 ```{r}
 # plot data, log scale
 g <- g + scale_y_log10(limits = c(1, means_max))
@@ -122,7 +124,6 @@ ggsave("Figure2b.png", height = 9, width = 7)
   
 <p class="question">Now imagine you work for an investor and want to see which industries generate the most revenue per employee. Create a chart makes this information clear.</p>  
   
-
 ```{r}
 # revenue per employee by industry
 revenue <- mydata[complete.cases(mydata),] %>%
@@ -134,7 +135,8 @@ revenue <- mydata[complete.cases(mydata),] %>%
 max_rev_ee = max(revenue$rev_ee)
 ```
 
-First, lets plot the data using color shading to indicate the total number of employees in a given industry.
+First, lets plot the data using color shading to indicate the total number of employees in a given industry.  
+
 ```{r}
 # plot with color fill by employee count
 g <- ggplot(revenue, aes(x=reorder(Industry, rev_ee), y=rev_ee, fill=Employees))
