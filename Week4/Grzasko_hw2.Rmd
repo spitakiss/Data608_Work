@@ -164,52 +164,6 @@ mygrid <- grid.arrange(p1,p2, ncol=1, heights = c(2,1))
 ggsave("q1.png",width=7, height=5, plot=mygrid)
 ```
 
-
-```{r echo=FALSE, eval=FALSE}
-#grid.newpage()
-
-#grid.arrange()
-#test <- grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
-#test
-# 
-# jpeg(filename = "Myplot.jpg", pointsize =12, quality = 200, bg = "white", res = NA, restoreConsole = TRUE)
-# multiplot(p1,p2, cols=1)
-# dev.off()
-# 
-# myplot = multiplot(p1,p2, col=1)
-# ggsave("test.png", width = 7, height=5, plot=myplot)
-#  scale_colour_manual(name='',values=c('Importantline'='grey','Pointvalues'='red'))
-  #scale_color_manual("Sample Year",values=("A"="red")) + 
-  #theme(legend.position = 'bottom')
-  
-  
-
-#scale_color_manual("Line.Color", values = c(black = 'black',red = 'red'), labels = c('binned data','median'))
-                    
-
-# p2 <- ggplot(b_df, aes(YearBuilt,.count)) + stat_ecdf(geom='line', col='blue') + 
-#   scale_x_continuous(breaks = seq(1850,2016,20))
-# p2
-```
-
-
-```{r eval=FALSE, echo=FALSE}
-
-
-p1_data <- with(f_df, condense(bin(YearBuilt, 10))) 
-p1_data
-ggplot(p1_data, aes(YearBuilt,.count)) + geom_line()
-
-df <- data.frame(x = c(rnorm(100, 0, 3), rnorm(100, 0, 10)),
-             g = gl(2, 100))
-ggplot(df, aes(x, colour = g)) + stat_ecdf(col = 'blue')
-
-
-autoplot(p1_data) + scale_x_continuous(breaks = seq(185,2016, 20)) + theme_fivethirtyeight() + 
-  stat_ecdf(col='blue')
-ggplot(p1_data, aes(YearBuilt, ed))  + geom_line() + theme_few()
-```
-  
 ## Question 2 
   
 <p class="question">The city is particularly worried about buildings that were unusually tall when they were built, since best-practices for safety hadn't yet been determined. Create a graph that shows
