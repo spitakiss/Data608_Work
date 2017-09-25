@@ -1,0 +1,326 @@
+---
+title: "Data 608: Assignment 2"
+author: "Aaron Grzasko"
+date: "September 24, 2017"
+output:
+  html_document:
+    highlight: haddock
+    theme: cosmo
+---
+  
+<style>
+    .question {color:gray;}
+</style>  
+ 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = NA, message = FALSE )
+```
+  
+## Assignment Overview  
+  
+<p class="question">We will be working with data about every tax lot in NYC, in a zip file. Please download it
+[here](http://www1.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page). You will need to combine the data from each boro into one file called 'all_PLUTO_data.R' in order to complete this assignment. I encourage you to do this via code but it is not necessary to submit such code.</p>  
+  
+**Load Libraries**  
+
+```{r}
+# libraries
+library(bigvis)
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(kableExtra)
+library(knitr)
+library(dplyr)
+library(grid)
+library(gridExtra)
+```
+  
+  
+**Get Data**  
+Using the scripts below, we downloaded all relevant files and merged into a single csv file.  For the purpose of running this R Markdown document, however, we assume there is already a file named *'all_PLUTO_data.csv'* in the current working directory.  In other words, the code chunk below is not evaluated.  
+
+```{r eval=FALSE}
+# url & file
+base_url <- 'http://www1.nyc.gov/assets/planning/download/zip/data-maps/open-data/'
+zip_file <- 'nyc_pluto_16v2%20.zip'
+
+# download data 
+download.file(paste0(base_url,zip_file),zip_file)
+
+# unzip files
+unzip(zip_file)
+
+# subdirectory where unzipped file is stored
+sub_dir <- 'BORO_zip_files_csv/'
+
+# filename prefixes, each abbreviated to represent nyc boro
+file_prefix <- c('BX','BK','MN','QN','SI')
+
+# read csv data for each boro  
+for (i in 1:length(file_prefix)) {
+  
+  # construct string: filepath, filename
+  file_name <- paste0(sub_dir,file_prefix[i],".csv")
+  
+  # save each csv file as separate data frame
+  assign(file_prefix[i],read.csv(file_name, stringsAsFactors = FALSE))
+}
+
+# save to master dataframe 
+mydf <- rbind(BX, BK, MN, QN, SI)
+
+# write master csv
+write.csv(mydf, file="all_PLUTO_data.csv")
+
+```
+
+**Read Data**  
+
+```{r cache=TRUE}
+# assuming all_PLUTO_data.csv in working directory
+mydf <- read.csv('all_PLUTO_data.csv', stringsAsFactors = FALSE)
+
+# examine head of data frame
+kable(head(mydf), 'html') %>%
+  kable_styling(c('striped','hover')) %>%
+  scroll_box(width = 7, height = "300px")
+
+```
+
+## Question 1  
+
+<p class="question">After a few building collapses, the City of New York is going to begin investigating older buildings for safety. However, the city has a limited number of inspectors, and wants to find a
+'cut-off' date before most city buildings were constructed. Build a graph to help the city determine when most buildings were constructed. Is there anything in the results that causes you to question the accuracy of the data? (note: only look at buildings built since 1850)</p>  
+
+**Quality Check**  
+  
+Before we make our plot, let's review summary statistics of the variable, `YearBuilt`:  
+
+```{r cache=TRUE}
+# generate summary statistics of YearBuilt 
+summary(mydf$YearBuilt)
+
+# total records
+n_tot <- length(mydf$YearBuilt)
+n_tot 
+
+# number of records with year = 0 
+n_zero <- length(which(mydf$YearBuilt == 0)) 
+n_zero
+
+# proportion of records with year = 0
+round(n_zero / n_tot,3)
+
+# number of records with year > 2017  
+length(which(mydf$YearBuilt > 2017)) 
+
+```
+  
+There are roughly 44,000 records (5% of total) with the `YearBuilt` coded as *0*.  These values may indicate the actual year of construction is unknown, or perhaps the values were coded in error.  Because the number of zero coded records is fairly significant, we have some concerns about the overall quality of the data.  
+  
+Also, there is one record with `YearBuilt` set equal to *2040*.  We assume this value was coded in error, and will ignore this data point in the subsequent plots.  
+  
+**Plot Generation**  
+
+```{r cache=TRUE}
+# filter data:  1850 < YrBuilt < 2018 
+f_df <- mydf %>% filter(YearBuilt > 1850, YearBuilt < 2018)
+
+# bin data in 10 year increments
+b_df <- with(f_df,condense(bin(YearBuilt, 10))) 
+
+# calculate median year built
+f_median <- data.frame(med=median(f_df$YearBuilt))
+
+# plot binned data + median 
+p1 <- ggplot(b_df, aes(YearBuilt,.count)) + geom_line() +
+  theme_bw() + 
+  labs(title = 'Number of NYC Buildings', 
+      subtitle = 'by year of construction (1850 - 2016)', 
+      y ='count') + 
+  scale_x_continuous(limits = c(1850, 2020),breaks = seq(1850,2020, 20)) + 
+  geom_vline(data = f_median, aes(xintercept = med), linetype = 2) +
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) + 
+  annotate('text', x = 1933, y = 175000, label="median", hjust=0, size=3)
+
+# plot cumulative distribution
+p2 <- ggplot(f_df, aes(YearBuilt)) + stat_ecdf(geom = 'line') + 
+  theme_bw() + 
+  scale_x_continuous(limits = c(1850, 2020), breaks = seq(1850,2020, 20)) + 
+  labs(x='year',y='cumu pct') + 
+  geom_vline(data = f_median, aes(xintercept = med), linetype = 2) 
+  
+# align x axes of both plots
+p1 <- ggplot_gtable(ggplot_build(p1))
+p2 <- ggplot_gtable(ggplot_build(p2))
+maxWidth = unit.pmax(p1$widths[2:3], p2$widths[2:3])
+p1$widths[2:3] <- maxWidth
+p2$widths[2:3] <- maxWidth
+
+mygrid <- grid.arrange(p1,p2, ncol=1, heights = c(2,1))
+
+ggsave("q1.png",width=7, height=5, plot=mygrid)
+```
+
+
+```{r echo=FALSE, eval=FALSE}
+#grid.newpage()
+
+#grid.arrange()
+#test <- grid.draw(rbind(ggplotGrob(p1), ggplotGrob(p2), size = "last"))
+#test
+# 
+# jpeg(filename = "Myplot.jpg", pointsize =12, quality = 200, bg = "white", res = NA, restoreConsole = TRUE)
+# multiplot(p1,p2, cols=1)
+# dev.off()
+# 
+# myplot = multiplot(p1,p2, col=1)
+# ggsave("test.png", width = 7, height=5, plot=myplot)
+#  scale_colour_manual(name='',values=c('Importantline'='grey','Pointvalues'='red'))
+  #scale_color_manual("Sample Year",values=("A"="red")) + 
+  #theme(legend.position = 'bottom')
+  
+  
+
+#scale_color_manual("Line.Color", values = c(black = 'black',red = 'red'), labels = c('binned data','median'))
+                    
+
+# p2 <- ggplot(b_df, aes(YearBuilt,.count)) + stat_ecdf(geom='line', col='blue') + 
+#   scale_x_continuous(breaks = seq(1850,2016,20))
+# p2
+```
+
+
+```{r eval=FALSE, echo=FALSE}
+
+
+p1_data <- with(f_df, condense(bin(YearBuilt, 10))) 
+p1_data
+ggplot(p1_data, aes(YearBuilt,.count)) + geom_line()
+
+df <- data.frame(x = c(rnorm(100, 0, 3), rnorm(100, 0, 10)),
+             g = gl(2, 100))
+ggplot(df, aes(x, colour = g)) + stat_ecdf(col = 'blue')
+
+
+autoplot(p1_data) + scale_x_continuous(breaks = seq(185,2016, 20)) + theme_fivethirtyeight() + 
+  stat_ecdf(col='blue')
+ggplot(p1_data, aes(YearBuilt, ed))  + geom_line() + theme_few()
+```
+  
+## Question 2 
+  
+<p class="question">The city is particularly worried about buildings that were unusually tall when they were built, since best-practices for safety hadn't yet been determined. Create a graph that shows
+how many buildings of a certain number of floors were built in each year (note: you may
+want to use a log scale for the number of buildings). It should be clear when 20-story
+buildings, 30-story buildings, and 40-story buildings were first built in large numbers.</p>  
+  
+**Data Summarization and Review**  
+
+```{r}
+# summarize relevant data
+flr_ct <- f_df %>% 
+  group_by(YearBuilt, NumFloors) %>%
+  count()
+
+# round floor counts to nearest 10 stories
+flr_ct$rd_NumFloors <- round(flr_ct$NumFloors,-1)
+
+# look at rounded floor quantiles
+quantile(flr_ct$rd_NumFloors,probs= c(seq(0,0.4,0.2),0.5,0.6,0.75,0.95,0.99, 0.995, 1))
+```
+  
+Based on a review of the data quantiles, we believe a rounded floor range of 20 through 70 covers an appropriate range of "tall" buildings, while excluding extreme outliers.  
+
+```{r}
+# filtered data based on floor counts between 20 and 70
+f_flr_ct <- flr_ct %>%
+  filter(rd_NumFloors >= 20, rd_NumFloors <= 70) %>%
+  group_by(YearBuilt, rd_NumFloors) %>%
+  summarise(ct = sum(n))
+```
+  
+**Plot Generation**  
+
+```{r}
+# plot
+g <- ggplot(f_flr_ct, aes(YearBuilt,ct)) + geom_point(position='jitter') + 
+  theme_bw() + scale_y_continuous(trans='log10') + 
+  scale_x_continuous(breaks = seq(1850,2020, 30)) + 
+  labs(x = 'year', title = 'Count of NYC Buildings by Year and Rounded Floor Count', 
+       subtitle = 'years: 1850 - 2016, floor counts: 20-70') + 
+  facet_wrap( ~ rd_NumFloors)
+g
+
+ggsave("q2.png",width=7, height=5)
+
+```
+
+## Question 3  
+  
+<p class="question">Your boss suspects that buildings constructed during the US's involvement in World War II (1941-1945) are more poorly constructed than those before and after the war due to the
+high cost of materials during those years. She thinks that, if you calculate assessed value
+per floor, you will see lower values for buildings at that time vs before or after. Construct a
+chart/graph to see if she's right.</p> 
+  
+**Data Wrangling**  
+```{r}
+# calculate era: pre ww2, ww2, or post ww2
+# calculated Assessed value per floor, excluding land value
+
+value_df <- f_df %>%
+  filter(NumFloors > 0, YearBuilt > 1935, YearBuilt < 1951 ) %>%
+  mutate(era = ifelse(YearBuilt < 1941, "pre",ifelse(YearBuilt <1946,"ww2","post")),
+         ValPerFloor = (AssessTot - AssessLand) / NumFloors) %>%
+  select(YearBuilt, era, ValPerFloor) 
+
+value_df$era <- factor(value_df$era, levels=c("pre","ww2","post"),ordered=TRUE)
+```
+  
+**Plot Generation**  
+  
+First,  let's look at a box plot of values for the aggregated WWII era (1941-1945), as well as the five periods both preceding and following the WWII era.  
+
+```{r}
+# plot 1 by era  
+g <- ggplot(value_df, aes(era, ValPerFloor)) + geom_boxplot() + 
+  theme_bw() + ylim(c(0,25000)) + 
+  labs(title = "NYC Assessed Building Value Per Floor by Era", 
+       subtitle = "pre: 1936-1940, ww2: 1941-1945, post: 1946-1950",
+       y = 'value per floor')
+
+ggsave("q3_a.png",width=7, height=5)
+``` 
+ 
+We notice a small but positive uptick in values per floor from the pre WWII era through the post war period.  This trend runs counter to our boss's hypothesis.  
+  
+Now let's review the trend in values by year:  
+
+```{r}
+# plot 2 by year
+g <- ggplot(value_df, aes(factor(YearBuilt), ValPerFloor, col=era)) + geom_boxplot() + 
+  theme_bw()  + ylim(c(0,35000)) + 
+  labs(title = "NYC Assessed Building Value Per Floor by Year", 
+       subtitle = "pre: 1936-1940, ww2: 1941-1945, post: 1946-1950",
+       y = 'value per floor, in dollars', x = 'year')
+
+g
+
+ggsave("q3_b.png",width=7, height=5)
+
+```
+  
+With the second plot, we get a more nuanced view of building values:  
+ 
+* values per floor generally decrease for buildings constructed in the years leading up to WWII.  
+* values rebound for the 1941-1942 years 
+* values plummeted for the year 1943, at the height of US involvement in the war
+* values for buildings constructed from 1944 through 1950 generally exhibit a positive trend in assessed values.  
+
+
+## References  
+  
+* Aligning x-axes with multiple plots: http://www.exegetic.biz/blog/2015/05/r-recipe-aligning-axes-in-ggplot2/
+* More x axis alignment: http://felixfan.github.io/stacking-plots-same-x/  
