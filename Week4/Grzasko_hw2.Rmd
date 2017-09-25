@@ -244,6 +244,7 @@ g <- ggplot(value_df, aes(era, ValPerFloor)) + geom_boxplot() +
   labs(title = "NYC Assessed Building Value Per Floor by Era", 
        subtitle = "pre: 1936-1940, ww2: 1941-1945, post: 1946-1950",
        y = 'value per floor')
+g
 
 ggsave("q3_a.png",width=7, height=5)
 ``` 
