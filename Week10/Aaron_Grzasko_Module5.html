@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Aaron Grzasko Module 5 Assignment</title>
+</head>
+
+<!-- 
+Created in Google Chrome: Version 61.0.3163.100 (Official Build) (64-bit)
+using PC running Windows 10
+-->
+
+
+<body>  
+	<h1>Data608: Module 5 Assignment</h1>
+	<h2>Aaron Grzasko</h2>
+	<h2>November 5, 2017<h2>
+	<br />
+	<h3>Assignment Intro</h3>
+	
+	<script type="text/javascript">
+	
+	// Assignment overview  
+	document.write('<p><i>This is one of two homework assignments you can complete for this week (you must do one, you may do both for extra credit). This is geared towards those of you who have never worked with javascript before.</i></p>');  
+
+	 document.write("<p><i>Your assignment should be in the form of an HTML page, which I will be able to run locally. Refer to the file 'js_in_webpage.html' on the github page for instructions on setting up javascript to run on an HTML page, and how to run/debug.</i></p>");
+	 </script>  
+	  
+
+	<h3>Part 1: Reverse Word</h3> 
+	
+	<script type="text/javascript">
+	
+	// Part 1 Instructions
+	document.write('<p><i>Create a function to reverse any word that you type in. This can be typed into either an input box or an alert box, and then print the result in a box or on the webpage.</i></p>');
+	</script>  
+
+	<!--button used to input word -->
+	<button onclick="revWord(wordInput())">Enter a word!</button>
+
+	<!--input word displays in the following p tag -->
+	<p id="inputWord"></p>
+	
+	<!--the input word in reverse order will display in the following p tag-->
+	<p id="outputWord"></p>
+	
+	<script type="text/javascript">
+
+	// function: prompt for word input
+	function wordInput() {
+		var output;
+    	var input = prompt("Please enter a word!");
+    	if (input == null || input == "") {
+        	output = "Goodbye!  Come again soon!";
+        }
+    	else {
+        	output = "You entered the following word: " + input;
+    	}
+    	
+    	document.getElementById("inputWord").innerHTML = output;
+
+    	return input;
+	}
+
+	// function: ouput word in reverse order
+	function revWord(word) {
+		var drow = '';  //word in reverse order = drow
+		var msg; //output message
+		
+		for (var i = word.length - 1; i >= 0; i--) {
+	 		drow += word[i];
+	 	}
+	 	
+	 	msg = "Your word in reverse order is: " + drow;
+	 	
+	 	document.getElementById("outputWord").innerHTML = msg;
+
+	} 
+	
+	</script>
+	
+	<h3>Part 2: Print First 20 Multiples of Number</h3>  
+
+	<script type="text/javascript">
+
+	// Part 2 Instructions
+	document.write('<p><i>Create a function that takes an input number, and prints a table with the first 20 multiples of the number, in order 5x4.</i></p>');
+
+	</script>
+    
+    <!--Form for entering number--> 
+	<form>
+		<Please enter a number:</p>
+		<input id="numb" type="number" size = "5">
+		<input type="button" value="Enter Number" onClick="numPrint();">
+
+	</form>
+
+
+	
+
+	<script type="text/javascript">
+		
+		
+		// Function: create multiplication table in 5 x 4 format
+		function numPrint(){
+			var num = document.getElementById("numb").value;
+			var output = '<table border="1" bgcolor="#efefef">';
+			//var output = '';
+			for (var i = 1; i <= 20; i++) {
+			
+				// add table row tag if i divisible by 4
+				if ((i-1) % 4 == 0) {
+					output += '<tr>';
+				}
+
+				// include <td> tags and multiplication result for all 20 numbers
+				output += '<td>' + num * i + '</td>';
+
+				// include closing tr tag if i+1 is divisible by 4
+				if ( i % 4 == 0) {
+					output += '</tr>';
+				}
+			}
+
+			// table closing tag after loop
+			output += '</table>';
+
+			document.getElementById("numTable").innerHTML = output;
+			
+		}
+
+	</script>	
+	<br />
+	<br />  
+
+	<div id="numTable"></div>	
+	
+
+</body>
+
+<!--
+External References:  
+
+*Alert Box with Prompt: https://www.w3schools.com/js/tryit.asp?filename=tryjs_prompt
+*js_in_webpage.html document provided by C Ferrari.
+*General info on for-loops and other js constructs: 
+	 Duckett, J., Ruppert, G., & Moore, J. (2015). JavaScript & jQuery: interactive front-end web development. Indianapolis, IN: Wiley.
+-->
+
+
+
+</html>
+
