@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html lang="en">
+ <head>
+ 	<meta charset="utf-8">
+ 	<title>STD Rate</title>
+ 	<script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+ 	<style>
+ 		body {
+ 			background-color: #efeff5;
+ 			font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+ 		}
+	</style>
+ </head>
+ 
+ <body>
+ 	<h1>Overview</h1>
+ 	<p>The aggregate incidence rates of sexually transmitted diseases (STDs) appear to be on the rise in the United States.  This conclusion is supported by data from the Centers for Disease Control and Prevention (CDC)&mdash;see <a href="https://wonder.cdc.gov/std-sex.html">here</a> for the raw data set.</p>
+ 	<p>While the aggregate incidence rates are on the rise, the trends by by state, disease type, and gender are somewhat of a mixed bag.</p>  
+
+ 	
+ 	<h1>Plot 1: Aggregate Incidence Rates </h1>
+ 	<div id="myDiv" style="width: 600px; height: 400px;"></div>
+ 	<script type="text/javascript">
+ 	
+ 		function createPlot() {
+ 			Plotly.d3.csv("https://raw.githubusercontent.com/spitakiss/Data608_Work/master/Week12/agg_std.csv", function(d){ munge(d) } );
+		};
+
+
+		function munge(r) {
+			var x = [], y = [];
+
+    		for (var i=0; i < r.length; i++) {
+        		myRow = r[i];
+        		x.push( myRow['Year'] );
+        		y.push( myRow['Rate'] );
+    		}
+    	
+    		makePlotly( x, y);
+		}
+
+		function makePlotly( x, y){
+    		var plotDiv = document.getElementById("plot");
+    		var traces = [{
+        		x: x, 
+        		y: y,
+        		mode: 'lines+markers',
+        		marker: {
+                	size: 12,
+                	opacity: 0.5
+            	},
+            	line: {
+            		color: 'rgb(220,20,60)'
+            	}
+    		}];
+
+    		var layout = {
+    			title:'Aggregate STD Incidence Rates per 100k<br> (1984-2014)',
+    			xaxis: {
+    				title: 'Year'
+    			},
+    			yaxis: {
+    				title: 'Rate'
+    			}
+    		};
+
+    		Plotly.newPlot('myDiv', traces, layout);
+        		//{title: 'Aggregate Incidence Rate per 100k<br> by Year'});
+		};
+  
+  		createPlot();
+	</script>
+	<h1> Plot 2: Detailed Incidence Rates</h1> 
+
+ 	<div class="showcase__section" id="bubble">
+  		<div class="spacer --small"></div>
+  		<div id="bubbleplots">
+    		<div class="bubbleplot" data-num="0">
+      			<div class="plot" id="plotdiv"></div>
+      			<div class="control-state">State:&emsp;&nbsp;&nbsp;<select class="statedata"></select> </div>
+      			<br>
+      			<div class="control-disease">Disease: <select class="diseasedata"></select> </div>
+      			<br>
+      			<div class="control-gender">Gender: <select class="genderdata">"</select> </div> 
+	        </div>
+        </div>
+    </div>
+
+
+ 	<script type="text/javascript">
+ 	
+ 	 	
+ 	Plotly.d3.csv('https://raw.githubusercontent.com/spitakiss/Data608_Work/master/Week12/std_mod.csv', function(err, rows){
+
+    	function unpack(rows, key) {
+        	return rows.map(function(row) { return row[key]; });
+    	}
+
+    	// define variables
+    	var allDiseases = unpack(rows, 'Disease'),
+        	allStates = unpack(rows, 'State'),
+        	allGenders = unpack(rows, 'Gender')
+        	allYears = unpack(rows, 'Year'),
+        	allRates = unpack(rows, 'Rate')
+        	
+        	listofStates = [],
+        	listofDiseases = [],
+        	listofGenders = ['Male','Female'],
+        	currentRate = [],
+        	currentYear = [];
+ 	
+
+        // unique states list
+        for (var i = 0; i < allStates.length; i++ ){
+        	if (listofStates.indexOf(allStates[i]) === -1 ){
+            	listofStates.push(allStates[i]);
+        	}
+    	}	
+        	
+        // unique disease list	
+ 		for (var i = 0; i < allDiseases.length; i++ ){
+        	if (listofDiseases.indexOf(allDiseases[i]) === -1 ){
+            	listofDiseases.push(allDiseases[i]);
+        	}
+    	}
+
+		
+    	function getData(myState,myDisease,myGender) {
+        	currentRate = [];
+        	currentYear = [];
+        	for (var i = 0 ; i < allDiseases.length ; i++){
+            	if (allDiseases[i] === myDisease && allStates[i] === myState && allGenders[i] === myGender) {
+                	currentRate.push(allRates[i]);
+                	currentYear.push(allYears[i]);
+            	}
+        	}
+    	};
+	
+    	// default data parameters 
+    	setBubblePlot('California','Chlamydia','Male');
+
+    	function setBubblePlot(myState, myDisease, myGender) {
+        	getData(myState, myDisease, myGender);
+
+        	var trace1 = {
+            	x: currentYear,
+            	y: currentRate,
+            	mode: 'lines+markers',
+            	marker: {
+                	size: 12,
+                	opacity: 0.5
+            	},
+            	line: {
+            		color: 'rgb(128, 0, 128)'
+            	}
+        	};
+
+        	var data = [trace1];
+
+        	var layout = {
+            	title:'STD Incidence Rates per 100k<br> by State, Disease, Gender<br>(1984-2014)',
+            	height: 400,
+            	width: 600,
+            	xaxis: {
+    				title: 'Year'
+    			},
+    			yaxis: {
+    				title: 'Rate'
+    			}
+
+        	};
+
+
+
+        	Plotly.newPlot('plotdiv', data, layout);
+    	};
+
+
+        var innerContainer = document.querySelector('[data-num="0"'),
+        plotEl = innerContainer.querySelector('.plot'),
+        stateSelector = innerContainer.querySelector('.statedata'),
+        diseaseSelector = innerContainer.querySelector('.diseasedata'),
+       	genderSelector = innerContainer.querySelector('.genderdata');
+
+       	function assignOptions(textArray, selector) {
+        	for (var i = 0; i < textArray.length;  i++) {
+            	var currentOption = document.createElement('option');
+            	currentOption.text = textArray[i];
+            	selector.appendChild(currentOption);
+        	}
+    	}
+
+
+    	assignOptions(listofStates, stateSelector);
+    	assignOptions(listofDiseases, diseaseSelector);
+    	assignOptions(listofGenders, genderSelector);
+
+    	function updateCountry(){
+        	setBubblePlot(stateSelector.value, diseaseSelector.value,genderSelector.value);
+
+    	}
+
+    	stateSelector.addEventListener('change', updateCountry, false);
+    	diseaseSelector.addEventListener('change', updateCountry, false);
+    	genderSelector.addEventListener('change', updateCountry, false);
+
+    });   	
+
+
+
+
+
+
+ 	</script>
+
+ 	<h1>References</h1>
+ 	<ol>
+ 		<li>Plot1: <a href='https://plot.ly/javascript/ajax-call/'>https://plot.ly/javascript/ajax-call/</a></li>
+ 		<li>Plot2: <a href='https://plot.ly/javascript/dropdowns/#bind-dropdown-events-to-plotlyjs-charts'>https://plot.ly/javascript/dropdowns/#bind-dropdown-events-to-plotlyjs-charts</li>   
+ </body>
+</html
+
+
