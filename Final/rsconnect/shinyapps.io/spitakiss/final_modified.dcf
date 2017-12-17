@@ -1,0 +1,13 @@
+name: final_modified
+title: Final_Modified
+username:
+account: spitakiss
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 249636
+bundleId: 1139617
+url: https://spitakiss.shinyapps.io/final_modified/
+when: 1513538492.68646
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: scrubbing_scripts.R|std_natl.csv|std_pct_chg.csv|std_redux.csv|tinder_monthly.csv

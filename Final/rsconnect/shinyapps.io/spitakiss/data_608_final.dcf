@@ -1,0 +1,13 @@
+name: data_608_final
+title: Data 608: Final
+username:
+account: spitakiss
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 247479
+bundleId: 1129293
+url: https://spitakiss.shinyapps.io/data_608_final/
+when: 1513051802.64312
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: scrubbing_scripts.R|std_natl.csv|std_pct_chg.csv|std_redux.csv|tinder_monthly.csv
